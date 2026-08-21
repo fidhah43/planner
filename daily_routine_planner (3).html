@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Routine">
+<meta name="theme-color" content="#FAF8F4">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<title>Daily Routine</title>
+<style>
+  :root {
+    --bg: #FAF8F4;
+    --surface: #FFFFFF;
+    --border: #E4E0D6;
+    --text-primary: #2B2A26;
+    --text-secondary: #6B6858;
+    --text-muted: #A6A290;
+    --accent: #2F6B4F;
+    --accent-bg: #E3EFE8;
+    --amber: #B8862F;
+    --amber-bg: #F7EDDA;
+    --danger: #A6432B;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px calc(64px + env(safe-area-inset-bottom));
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .app {
+    width: 100%;
+    max-width: 560px;
+  }
+  .greeting {
+    margin-bottom: 20px;
+  }
+  .greeting-text {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 20px;
+    color: var(--text-primary);
+  }
+  .quote-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    font-style: italic;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 20px;
+  }
+  .celebration {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: var(--accent-bg);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: var(--accent);
+    animation: pop-in 0.3s ease;
+  }
+  .celebration.show { display: flex; }
+  @keyframes pop-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .date-label {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 22px;
+    color: var(--text-primary);
+  }
+  .progress-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+  .progress-track {
+    width: 140px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.2s;
+  }
+  .task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .task-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .checkbox {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid #C4C0B2;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .checkbox.done {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .checkbox svg { display: none; width: 13px; height: 13px; }
+  .checkbox.done svg { display: block; }
+  .task-text {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  .task-text.done {
+    color: var(--text-muted);
+    text-decoration: line-through;
+  }
+  .del-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 6px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .del-btn:hover { color: var(--danger); }
+  .empty-state {
+    text-align: center;
+    padding: 32px 0;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  .add-row {
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    margin-bottom: 24px;
+  }
+  input[type="text"] {
+    flex: 1;
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 16px;
+    min-width: 0;
+  }
+  input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  button.add-btn {
+    height: 38px;
+    padding: 0 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button.add-btn:hover { background: var(--accent-bg); border-color: var(--accent); }
+  .input-error {
+    display: none;
+    font-size: 13px;
+    color: var(--danger);
+    margin: -16px 0 16px;
+  }
+  .consistency {
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+  .consistency-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .consistency-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .streak-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .heatmap {
+    display: flex;
+    gap: 4px;
+  }
+  .heatmap-cell {
+    flex: 1;
+    height: 28px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .heatmap-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+  }
+  .heatmap-labels span {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .footer-note {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 32px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="greeting">
+    <div class="greeting-text" id="greeting-text"></div>
+    <div class="quote-text" id="quote-text"></div>
+  </div>
+
+  <div class="header">
+    <div>
+      <div class="date-label" id="date-label"></div>
+      <div class="progress-label" id="progress-label">0 of 0 done</div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="celebration" id="celebration">
+    <span style="font-size:20px;">🎉</span>
+    <span id="celebration-text">All done for today. Nice work.</span>
+  </div>
+
+  <div class="task-list" id="task-list"></div>
+  <div class="empty-state" id="empty-state">No routine tasks yet. Add the things you do every day below.</div>
+
+  <div class="add-row">
+    <input type="text" id="task-input" placeholder="Add a recurring task">
+    <button class="add-btn" id="add-btn">Add</button>
+  </div>
+  <div class="input-error" id="input-error">Enter a task first</div>
+
+  <div class="consistency">
+    <div class="consistency-header">
+      <span class="consistency-title">Consistency</span>
+      <span class="streak-label" id="streak-label"></span>
+    </div>
+    <div class="heatmap" id="heatmap"></div>
+    <div class="heatmap-labels">
+      <span>30 days ago</span>
+      <span>Today</span>
+    </div>
+  </div>
+
+  <div class="footer-note">Saved on this device only, in this browser. Bookmark or keep this file to keep your history.</div>
+</div>
+
+<script>
+const todayKey = new Date().toISOString().slice(0,10);
+const LIST_KEY = 'planner_routine_list';
+const STATE_PREFIX = 'planner_routine_state_';
+
+let routine = JSON.parse(localStorage.getItem(LIST_KEY) || '[]');
+let doneMap = JSON.parse(localStorage.getItem(STATE_PREFIX + todayKey) || '{}');
+
+document.getElementById('date-label').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
+const hour = new Date().getHours();
+const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+document.getElementById('greeting-text').textContent = greeting;
+
+const quotes = [
+  'Small steps, every day.',
+  'You don\u2019t need a perfect day, just a done one.',
+  'Consistency beats intensity.',
+  'Future you is watching. Make it count.',
+  'Progress, not perfection.',
+  'Show up, even in small ways.',
+  'One task at a time. That\u2019s the whole trick.',
+  'Discipline is choosing what you want most over what you want now.',
+  'Done is better than perfect.',
+  'You don\u2019t have to be extreme, just consistent.',
+  'Today is another rep. Build the habit.',
+  'Rest if you must, but don\u2019t quit.',
+  'Momentum starts with one tick.',
+  'Be someone your streak can count on.',
+  'No pressure. Just presence.',
+  'Every checkbox is a promise kept to yourself.'
+];
+const quoteIndex = Math.floor(new Date().setHours(0,0,0,0) / 86400000) % quotes.length;
+document.getElementById('quote-text').textContent = quotes[quoteIndex];
+
+function saveList() {
+  localStorage.setItem(LIST_KEY, JSON.stringify(routine));
+}
+function saveState() {
+  localStorage.setItem(STATE_PREFIX + todayKey, JSON.stringify(doneMap));
+  renderHeatmap();
+}
+
+function render() {
+  const list = document.getElementById('task-list');
+  const empty = document.getElementById('empty-state');
+  list.innerHTML = '';
+
+  if (routine.length === 0) {
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    routine.forEach(task => {
+      const done = !!doneMap[task.id];
+      const row = document.createElement('div');
+      row.className = 'task-row';
+
+      const checkbox = document.createElement('button');
+      checkbox.className = 'checkbox' + (done ? ' done' : '');
+      checkbox.setAttribute('aria-label', done ? 'Mark as not done' : 'Mark as done');
+      checkbox.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      checkbox.onclick = () => { doneMap[task.id] = !done; saveState(); render(); };
+
+      const label = document.createElement('div');
+      label.textContent = task.text;
+      label.className = 'task-text' + (done ? ' done' : '');
+
+      const del = document.createElement('button');
+      del.className = 'del-btn';
+      del.setAttribute('aria-label', 'Remove from routine');
+      del.textContent = '\u00D7';
+      del.onclick = () => {
+        routine = routine.filter(t => t.id !== task.id);
+        delete doneMap[task.id];
+        saveList();
+        saveState();
+        render();
+      };
+
+      row.appendChild(checkbox);
+      row.appendChild(label);
+      row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+
+  const doneCount = routine.filter(t => doneMap[t.id]).length;
+  const total = routine.length;
+  const pct = total === 0 ? 0 : Math.round((doneCount / total) * 100);
+  document.getElementById('progress-label').textContent = doneCount + ' of ' + total + ' done';
+  document.getElementById('progress-fill').style.width = pct + '%';
+
+  const celebration = document.getElementById('celebration');
+  celebration.classList.toggle('show', total > 0 && doneCount === total);
+}
+
+function pastDateKeys(n) {
+  const keys = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    keys.push(d.toISOString().slice(0,10));
+  }
+  return keys;
+}
+
+function renderHeatmap() {
+  const container = document.getElementById('heatmap');
+  const streakLabel = document.getElementById('streak-label');
+  const days = pastDateKeys(30);
+  container.innerHTML = '';
+
+  const total = routine.length;
+  const pcts = [];
+
+  days.forEach(day => {
+    let pct = null;
+    if (day === todayKey) {
+      pct = total === 0 ? 0 : Math.round((routine.filter(t => doneMap[t.id]).length / total) * 100);
+    } else {
+      const raw = localStorage.getItem(STATE_PREFIX + day);
+      if (raw) {
+        const map = JSON.parse(raw);
+        const doneKeys = Object.keys(map).filter(k => map[k]).length;
+        pct = total === 0 ? 0 : Math.round((doneKeys / total) * 100);
+      }
+    }
+    pcts.push({ day, pct });
+
+    const cell = document.createElement('div');
+    cell.className = 'heatmap-cell';
+    cell.title = day + (pct === null ? ': no data' : ': ' + pct + '% done');
+    if (pct !== null) {
+      if (pct >= 100) cell.style.background = '#2F6B4F';
+      else if (pct >= 50) cell.style.background = '#8FBFA4';
+      else if (pct > 0) cell.style.background = '#F7EDDA';
+    }
+    container.appendChild(cell);
+  });
+
+  let streak = 0;
+  for (let i = pcts.length - 1; i >= 0; i--) {
+    const entry = pcts[i];
+    if (entry.pct !== null && entry.pct >= 100) { streak++; continue; }
+    if (entry.day === todayKey) continue;
+    break;
+  }
+  streakLabel.textContent = streak > 0 ? streak + ' day' + (streak === 1 ? '' : 's') + ' streak' : 'No streak yet';
+}
+
+function addTask() {
+  const input = document.getElementById('task-input');
+  const errorEl = document.getElementById('input-error');
+  const text = input.value.trim();
+  if (!text) {
+    errorEl.style.display = 'block';
+    return;
+  }
+  errorEl.style.display = 'none';
+  routine.push({ id: Date.now() + '-' + Math.random().toString(36).slice(2, 7), text });
+  input.value = '';
+  saveList();
+  render();
+  renderHeatmap();
+}
+
+document.getElementById('add-btn').addEventListener('click', addTask);
+document.getElementById('task-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTask();
+});
+document.getElementById('task-input').addEventListener('input', () => {
+  document.getElementById('input-error').style.display = 'none';
+});
+
+render();
+renderHeatmap();
+</script>
+</body>
+</html>
